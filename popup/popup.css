@@ -14,7 +14,6 @@
   --bg-hover: #39393b;
 
   --color-rec: #1d5fd6;
-  --color-success: #22c55e;
   --color-error: #ef4444;
   --color-running: #a1a1aa;
   --color-blue: #3b82f6;
@@ -191,7 +190,7 @@
   transition: color 0.15s ease;
 }
 .crx-status:empty { display: none; }
-.crx-status.crx-status-success { color: var(--color-success); font-weight: 500; }
+.crx-status.crx-status-success { color: var(--color-blue); font-weight: 500; }
 .crx-status.crx-status-error { color: var(--color-error); font-weight: 500; }
 .crx-status.crx-status-running { color: var(--color-running); }
 
@@ -237,7 +236,7 @@
   transition: 0.2s;
   border-radius: 50%;
 }
-.crx-switch input:checked + .crx-slider { background-color: var(--color-success); }
+.crx-switch input:checked + .crx-slider { background-color: var(--color-blue); }
 .crx-switch input:checked + .crx-slider:before {
   transform: translateX(16px);
   background-color: #ffffff;
@@ -303,6 +302,7 @@
   height: 16px;
   fill: var(--text-bright);
   display: block;
+  filter: brightness(0) saturate(100%) invert(35%) sepia(74%) saturate(1652%) hue-rotate(202deg) brightness(94%) contrast(101%);
 }
 
 /* Screen-source rows */

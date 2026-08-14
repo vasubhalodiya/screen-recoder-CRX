@@ -36,10 +36,10 @@
   const sleep = ms => new Promise(r => setTimeout(r, ms));
 
   const stopAllTracks = () => {
-    allTracks.forEach(t => { try { t.stop(); } catch (_) {} });
+    allTracks.forEach(t => { try { t.stop(); } catch (_) { } });
     allTracks = [];
     if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
-    if (audioCtx) { try { audioCtx.close(); } catch (_) {} audioCtx = null; }
+    if (audioCtx) { try { audioCtx.close(); } catch (_) { } audioCtx = null; }
   };
 
   const makeVideoEl = stream => {
@@ -53,7 +53,7 @@
 
   const buildComposite = async (screenStream, cameraStream, quality) => {
     const screenVideo = makeVideoEl(screenStream);
-    await screenVideo.play().catch(() => {});
+    await screenVideo.play().catch(() => { });
     if (!screenVideo.videoWidth) {
       await new Promise(res => { screenVideo.onloadedmetadata = res; });
     }
@@ -70,7 +70,7 @@
     let cameraVideo = null;
     if (cameraStream) {
       cameraVideo = makeVideoEl(cameraStream);
-      await cameraVideo.play().catch(() => {});
+      await cameraVideo.play().catch(() => { });
     }
 
     const bubbleR = Math.round(Math.min(width, height) * 0.14);
@@ -292,8 +292,8 @@
         display: flex;
         align-items: center;
         gap: 10px;
-        height: 44px;
-        padding: 0 12px;
+        padding: 6px;
+        padding-left: 10px;
         background: #181818;
         border-radius: 12px;
         box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
@@ -303,14 +303,18 @@
       }
       .ctl-bar.ctl-show { opacity: 1; transform: translateY(0); }
       .ctl-drag { display: flex; align-items: center; cursor: grab; touch-action: none; }
-      .ctl-drag-icon { width: 14px; height: 14px; fill: #555555; display: block; }
+      .ctl-drag-icon { width: 15px; height: 15px; fill: #555555; display: block; }
+      .ctl-time-group { display: flex; align-items: center; gap: 6px; }
       .ctl-dot { width: 9px; height: 9px; border-radius: 50%; background: #ef4444; flex-shrink: 0; animation: ctl-blink 1.4s ease-in-out infinite; }
       .ctl-dot.ctl-paused { animation: none; background: #a1a1aa; }
       @keyframes ctl-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-      .ctl-time { font-size: 13px; font-weight: 500; color: #cccccc; min-width: 38px; flex-shrink: 0; }
-      .ctl-btn { display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border: none; border-radius: 7px; background: #2c2c2e; cursor: pointer; transition: background 0.15s; }
+      .ctl-time { font-size: 13px; font-weight: 500; color: #cccccc; min-width: 38px; flex-shrink: 0; margin-right: -5px; }
+      .ctl-btn-group { display: flex; align-items: center; gap: 3px; }
+      .ctl-btn { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: none; background: #2c2c2e; cursor: pointer; transition: background 0.15s; }
       .ctl-btn:hover { background: #39393b; }
-      .ctl-icon { width: 13px; height: 13px; fill: #cccccc; display: block; }
+      #ctl-pause { border-top-left-radius: 9px; border-bottom-left-radius: 9px; border-top-right-radius: 4px; border-bottom-right-radius: 4px; }
+      #ctl-stop { border-top-left-radius: 4px; border-bottom-left-radius: 4px; border-top-right-radius: 9px; border-bottom-right-radius: 9px; }
+      .ctl-icon { width: 17px; height: 17px; fill: #cccccc; display: block; }
       .ctl-btn-stop .ctl-icon { fill: #ef4444; }
     `;
     shadow.appendChild(style);
@@ -324,15 +328,19 @@
           <circle cx="11" cy="3" r="1.2"/><circle cx="11" cy="8" r="1.2"/><circle cx="11" cy="13" r="1.2"/>
         </svg>
       </div>
-      <div class="ctl-dot" id="ctl-dot"></div>
-      <span class="ctl-time" id="ctl-time">00:00</span>
-      <button class="ctl-btn" id="ctl-pause" title="Pause">
-        <svg viewBox="0 0 24 24" class="ctl-icon ctl-icon-pause"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
-        <svg viewBox="0 0 24 24" class="ctl-icon ctl-icon-play" style="display:none"><path d="M7 5v14l12-7z"/></svg>
-      </button>
-      <button class="ctl-btn ctl-btn-stop" id="ctl-stop" title="Stop">
-        <svg viewBox="0 0 24 24" class="ctl-icon"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
-      </button>
+      <div class="ctl-time-group">
+        <div class="ctl-dot" id="ctl-dot"></div>
+        <span class="ctl-time" id="ctl-time">00:00</span>
+      </div>
+      <div class="ctl-btn-group">
+        <button class="ctl-btn" id="ctl-pause" title="Pause">
+          <svg viewBox="0 0 24 24" class="ctl-icon ctl-icon-pause"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+          <svg viewBox="0 0 24 24" class="ctl-icon ctl-icon-play" style="display:none"><path d="M7 5v14l12-7z"/></svg>
+        </button>
+        <button class="ctl-btn ctl-btn-stop" id="ctl-stop" title="Stop">
+          <svg viewBox="0 0 24 24" class="ctl-icon"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+        </button>
+      </div>
     `;
     shadow.appendChild(bar);
 
@@ -361,7 +369,7 @@
       isDragging = true;
       offsetX = e.clientX - host.offsetLeft;
       offsetY = e.clientY - host.offsetTop;
-      try { dragHandle.setPointerCapture(e.pointerId); } catch (_) {}
+      try { dragHandle.setPointerCapture(e.pointerId); } catch (_) { }
       e.stopPropagation();
       e.preventDefault();
     });
@@ -380,7 +388,7 @@
     host.addEventListener('pointerup', e => {
       if (!isDragging) return;
       isDragging = false;
-      try { dragHandle.releasePointerCapture(e.pointerId); } catch (_) {}
+      try { dragHandle.releasePointerCapture(e.pointerId); } catch (_) { }
       e.stopPropagation();
     });
     host.addEventListener('pointercancel', () => { isDragging = false; });
@@ -499,7 +507,7 @@
       isDragging = true;
       offsetX = e.clientX - root.offsetLeft;
       offsetY = e.clientY - root.offsetTop;
-      try { handle.setPointerCapture(e.pointerId); } catch (_) {}
+      try { handle.setPointerCapture(e.pointerId); } catch (_) { }
       handle.style.cursor = 'grabbing';
       container.style.cursor = 'grabbing';
       e.stopPropagation();
@@ -531,7 +539,7 @@
     container.addEventListener('pointerup', e => {
       if (!isDragging) return;
       isDragging = false;
-      try { handle.releasePointerCapture(e.pointerId); } catch (_) {}
+      try { handle.releasePointerCapture(e.pointerId); } catch (_) { }
       handle.style.cursor = '';
       container.style.cursor = '';
       e.stopPropagation();
@@ -550,7 +558,7 @@
     // ── Close button ─────────────────────────────────────────────────────────
     shadow.getElementById('crx-close-btn').addEventListener('click', e => {
       if (isRecording) return; // don't let the panel vanish mid-recording
-      try { resizeObserver.disconnect(); } catch (_) {}
+      try { resizeObserver.disconnect(); } catch (_) { }
       window.removeEventListener('resize', handleResize);
       container.classList.remove('crx-visible');
       setTimeout(() => { root.remove(); }, 400);
@@ -701,7 +709,7 @@
         if (selectedSource === 'window') displayOptions.video = { displaySurface: 'window' };
         else if (selectedSource === 'screen') displayOptions.video = { displaySurface: 'monitor' };
         else if (selectedSource === 'tab') {
-          try { displayOptions.preferCurrentTab = true; } catch (_) {}
+          try { displayOptions.preferCurrentTab = true; } catch (_) { }
         }
 
         const screenStream = await navigator.mediaDevices.getDisplayMedia(displayOptions);
