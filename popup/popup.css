@@ -13,7 +13,7 @@
   --bg-secondary: #2c2c2e;
   --bg-hover: #39393b;
 
-  --color-rec: #ff5a2e;
+  --color-rec: #1d5fd6;
   --color-success: #22c55e;
   --color-error: #ef4444;
   --color-running: #a1a1aa;
@@ -330,7 +330,7 @@
 
 /* Start recording row */
 .crx-start-item {
-  background: linear-gradient(135deg, #ff5a2e, #ed1c57) !important;
+  background: linear-gradient(135deg, #0b3d91, #1d5fd6 55%, #5aa9ff) !important;
 }
 .crx-start-item .crx-row-label { color: #ffffff; font-weight: 500; }
 .crx-start-item:hover { filter: brightness(1.06); }

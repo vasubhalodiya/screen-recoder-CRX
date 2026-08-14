@@ -30,6 +30,8 @@
   let audioCtx = null;
   let timerInterval = null;
   let recordStartTime = null;
+  let pausedAccum = 0;
+  let pauseStartedAt = null;
 
   const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -130,6 +132,274 @@
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 30000);
+  };
+
+  const createCountdownOverlay = () => {
+    const host = document.createElement('div');
+    host.id = 'screencraft-countdown-overlay';
+    host.style.position = 'fixed';
+    host.style.inset = '0';
+    host.style.zIndex = '2147483647';
+    host.style.pointerEvents = 'none';
+    document.body.appendChild(host);
+
+    const shadow = host.attachShadow({ mode: 'open' });
+    const style = document.createElement('style');
+    style.textContent = `
+      :host { all: initial; }
+      .cd-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(22px);
+        -webkit-backdrop-filter: blur(22px);
+        opacity: 0;
+        transition: opacity 0.4s ease;
+      }
+      .cd-backdrop.cd-show { opacity: 1; }
+      .cd-edge {
+        position: fixed;
+        background-repeat: repeat;
+        background-image: linear-gradient(90deg,
+          #0b3d91 0%, #1d5fd6 25%, #5aa9ff 50%, #1d5fd6 75%, #0b3d91 100%);
+      }
+      .cd-edge-top {
+        top: 0; left: 0; right: 0; height: 24px;
+        background-size: 220% 100%;
+        -webkit-mask-image: linear-gradient(180deg, #fff, transparent);
+        mask-image: linear-gradient(180deg, #fff, transparent);
+        animation: cd-wave-x 5.5s linear infinite;
+      }
+      .cd-edge-bottom {
+        bottom: 0; left: 0; right: 0; height: 24px;
+        background-size: 220% 100%;
+        -webkit-mask-image: linear-gradient(0deg, #fff, transparent);
+        mask-image: linear-gradient(0deg, #fff, transparent);
+        animation: cd-wave-x 7s linear infinite reverse;
+      }
+      .cd-edge-left {
+        top: 0; bottom: 0; left: 0; width: 24px;
+        background-image: linear-gradient(180deg,
+          #0b3d91 0%, #1d5fd6 25%, #5aa9ff 50%, #1d5fd6 75%, #0b3d91 100%);
+        background-size: 100% 220%;
+        -webkit-mask-image: linear-gradient(90deg, #fff, transparent);
+        mask-image: linear-gradient(90deg, #fff, transparent);
+        animation: cd-wave-y 6.2s linear infinite;
+      }
+      .cd-edge-right {
+        top: 0; bottom: 0; right: 0; width: 24px;
+        background-image: linear-gradient(180deg,
+          #0b3d91 0%, #1d5fd6 25%, #5aa9ff 50%, #1d5fd6 75%, #0b3d91 100%);
+        background-size: 100% 220%;
+        -webkit-mask-image: linear-gradient(270deg, #fff, transparent);
+        mask-image: linear-gradient(270deg, #fff, transparent);
+        animation: cd-wave-y 4.8s linear infinite reverse;
+      }
+      @keyframes cd-wave-x { from { background-position: 0% 0; } to { background-position: -220% 0; } }
+      @keyframes cd-wave-y { from { background-position: 0 0%; } to { background-position: 0 -220%; } }
+      .cd-edges { opacity: 0; transition: opacity 0.4s ease; }
+      .cd-edges.cd-show { opacity: 0.5; }
+      .cd-card {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0.82);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s ease, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .cd-card.cd-show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+      .cd-number {
+        position: relative;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+        font-size: 46px;
+        font-weight: 700;
+        color: #ffffff;
+        text-shadow: 0 2px 16px rgba(90, 169, 255, 0.5);
+        opacity: 0;
+        transform: scale(1);
+        transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .cd-number.cd-show { opacity: 1; transform: scale(1); }
+    `;
+    shadow.appendChild(style);
+
+    const backdrop = document.createElement('div');
+    backdrop.className = 'cd-backdrop';
+    shadow.appendChild(backdrop);
+
+    const edges = document.createElement('div');
+    edges.className = 'cd-edges';
+    edges.innerHTML = `
+      <div class="cd-edge cd-edge-top"></div>
+      <div class="cd-edge cd-edge-bottom"></div>
+      <div class="cd-edge cd-edge-left"></div>
+      <div class="cd-edge cd-edge-right"></div>
+    `;
+    shadow.appendChild(edges);
+
+    const card = document.createElement('div');
+    card.className = 'cd-card';
+    card.innerHTML = `<span class="cd-number"></span>`;
+    shadow.appendChild(card);
+
+    const number = card.querySelector('.cd-number');
+
+    requestAnimationFrame(() => {
+      backdrop.classList.add('cd-show');
+      edges.classList.add('cd-show');
+      card.classList.add('cd-show');
+    });
+
+    return {
+      setNumber(n) {
+        number.classList.remove('cd-show');
+        number.style.transform = 'scale(1.35)';
+        requestAnimationFrame(() => {
+          number.textContent = n;
+          number.classList.add('cd-show');
+        });
+      },
+      destroy() {
+        backdrop.classList.remove('cd-show');
+        edges.classList.remove('cd-show');
+        card.classList.remove('cd-show');
+        setTimeout(() => host.remove(), 350);
+      }
+    };
+  };
+
+  const createControlsWidget = ({ onTogglePause, onStop }) => {
+    const host = document.createElement('div');
+    host.id = 'screencraft-controls-widget';
+    host.style.position = 'fixed';
+    host.style.top = '20px';
+    host.style.right = '20px';
+    host.style.zIndex = '2147483647';
+    document.body.appendChild(host);
+
+    ['click', 'mousedown', 'mouseup', 'pointerdown', 'pointerup', 'dblclick', 'contextmenu'].forEach(evtType => {
+      host.addEventListener(evtType, e => e.stopPropagation());
+    });
+
+    const shadow = host.attachShadow({ mode: 'open' });
+    const style = document.createElement('style');
+    style.textContent = `
+      :host { all: initial; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif; }
+      .ctl-bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        height: 44px;
+        padding: 0 12px;
+        background: #181818;
+        border-radius: 12px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+        opacity: 0;
+        transform: translateY(-16px);
+        transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .ctl-bar.ctl-show { opacity: 1; transform: translateY(0); }
+      .ctl-drag { display: flex; align-items: center; cursor: grab; touch-action: none; }
+      .ctl-drag-icon { width: 14px; height: 14px; fill: #555555; display: block; }
+      .ctl-dot { width: 9px; height: 9px; border-radius: 50%; background: #ef4444; flex-shrink: 0; animation: ctl-blink 1.4s ease-in-out infinite; }
+      .ctl-dot.ctl-paused { animation: none; background: #a1a1aa; }
+      @keyframes ctl-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+      .ctl-time { font-size: 13px; font-weight: 500; color: #cccccc; min-width: 38px; flex-shrink: 0; }
+      .ctl-btn { display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border: none; border-radius: 7px; background: #2c2c2e; cursor: pointer; transition: background 0.15s; }
+      .ctl-btn:hover { background: #39393b; }
+      .ctl-icon { width: 13px; height: 13px; fill: #cccccc; display: block; }
+      .ctl-btn-stop .ctl-icon { fill: #ef4444; }
+    `;
+    shadow.appendChild(style);
+
+    const bar = document.createElement('div');
+    bar.className = 'ctl-bar';
+    bar.innerHTML = `
+      <div class="ctl-drag" id="ctl-drag">
+        <svg viewBox="0 0 16 16" class="ctl-drag-icon">
+          <circle cx="5" cy="3" r="1.2"/><circle cx="5" cy="8" r="1.2"/><circle cx="5" cy="13" r="1.2"/>
+          <circle cx="11" cy="3" r="1.2"/><circle cx="11" cy="8" r="1.2"/><circle cx="11" cy="13" r="1.2"/>
+        </svg>
+      </div>
+      <div class="ctl-dot" id="ctl-dot"></div>
+      <span class="ctl-time" id="ctl-time">00:00</span>
+      <button class="ctl-btn" id="ctl-pause" title="Pause">
+        <svg viewBox="0 0 24 24" class="ctl-icon ctl-icon-pause"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+        <svg viewBox="0 0 24 24" class="ctl-icon ctl-icon-play" style="display:none"><path d="M7 5v14l12-7z"/></svg>
+      </button>
+      <button class="ctl-btn ctl-btn-stop" id="ctl-stop" title="Stop">
+        <svg viewBox="0 0 24 24" class="ctl-icon"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+      </button>
+    `;
+    shadow.appendChild(bar);
+
+    const dot = shadow.getElementById('ctl-dot');
+    const timeEl = shadow.getElementById('ctl-time');
+    const dragHandle = shadow.getElementById('ctl-drag');
+    const btnPause = shadow.getElementById('ctl-pause');
+    const btnStop = shadow.getElementById('ctl-stop');
+    const iconPause = btnPause.querySelector('.ctl-icon-pause');
+    const iconPlay = btnPause.querySelector('.ctl-icon-play');
+
+    const formatTime = ms => {
+      const total = Math.max(0, Math.floor(ms / 1000));
+      const m = String(Math.floor(total / 60)).padStart(2, '0');
+      const s = String(total % 60).padStart(2, '0');
+      return `${m}:${s}`;
+    };
+
+    btnPause.addEventListener('click', e => { e.stopPropagation(); onTogglePause(); });
+    btnStop.addEventListener('click', e => { e.stopPropagation(); onStop(); });
+
+    // ── Drag (via drag handle only) ──────────────────────────────────────────
+    let isDragging = false;
+    let offsetX = 0, offsetY = 0;
+    dragHandle.addEventListener('pointerdown', e => {
+      isDragging = true;
+      offsetX = e.clientX - host.offsetLeft;
+      offsetY = e.clientY - host.offsetTop;
+      try { dragHandle.setPointerCapture(e.pointerId); } catch (_) {}
+      e.stopPropagation();
+      e.preventDefault();
+    });
+    host.addEventListener('pointermove', e => {
+      if (!isDragging) return;
+      e.stopPropagation();
+      const rect = host.getBoundingClientRect();
+      const maxLeft = window.innerWidth - rect.width;
+      const maxTop = window.innerHeight - rect.height;
+      const newLeft = Math.max(0, Math.min(e.clientX - offsetX, maxLeft));
+      const newTop = Math.max(0, Math.min(e.clientY - offsetY, maxTop));
+      host.style.left = `${newLeft}px`;
+      host.style.top = `${newTop}px`;
+      host.style.right = 'auto';
+    });
+    host.addEventListener('pointerup', e => {
+      if (!isDragging) return;
+      isDragging = false;
+      try { dragHandle.releasePointerCapture(e.pointerId); } catch (_) {}
+      e.stopPropagation();
+    });
+    host.addEventListener('pointercancel', () => { isDragging = false; });
+
+    requestAnimationFrame(() => bar.classList.add('ctl-show'));
+
+    return {
+      updateTick(elapsed, paused) {
+        timeEl.textContent = formatTime(elapsed);
+        dot.classList.toggle('ctl-paused', !!paused);
+        iconPause.style.display = paused ? 'none' : 'block';
+        iconPlay.style.display = paused ? 'block' : 'none';
+        btnPause.title = paused ? 'Resume' : 'Pause';
+      },
+      destroy() {
+        bar.classList.remove('ctl-show');
+        setTimeout(() => host.remove(), 300);
+      }
+    };
   };
 
   await mountPopup();
@@ -360,22 +630,41 @@
       sourceRows.forEach(r => r.style.opacity = recording ? '0.5' : '');
     };
 
+    const hidePopup = () => { container.classList.remove('crx-visible'); };
+    const showPopup = () => { container.classList.add('crx-visible'); };
+
+    let controlsWidget = null;
+
     const runCountdown = async () => {
       if (!settings.countdown) return;
+      const overlay = createCountdownOverlay();
       for (const n of [3, 2, 1]) {
-        status.className = 'crx-status crx-status-running';
-        status.innerHTML = `Starting in ${n}…`;
+        overlay.setNumber(n);
         await sleep(700);
       }
+      overlay.destroy();
+    };
+
+    const getElapsedMs = () => {
+      if (!recordStartTime) return 0;
+      let elapsed = Date.now() - recordStartTime - pausedAccum;
+      if (pauseStartedAt) elapsed -= (Date.now() - pauseStartedAt);
+      return elapsed;
     };
 
     const startTimer = () => {
       recordStartTime = Date.now();
+      pausedAccum = 0;
+      pauseStartedAt = null;
       if (timerInterval) clearInterval(timerInterval);
       const tick = () => {
-        if (!settings.controls) return;
-        status.className = 'crx-status crx-status-running';
-        status.innerHTML = `<span class="crx-spinner"></span> Recording ${formatTime(Date.now() - recordStartTime)}`;
+        const elapsed = getElapsedMs();
+        if (controlsWidget) {
+          controlsWidget.updateTick(elapsed, !!pauseStartedAt);
+        } else {
+          status.className = 'crx-status crx-status-running';
+          status.innerHTML = `<span class="crx-spinner"></span> Recording ${formatTime(elapsed)}`;
+        }
       };
       tick();
       timerInterval = setInterval(tick, 1000);
@@ -385,8 +674,26 @@
       if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
     };
 
+    const pauseRecording = () => {
+      if (!mediaRecorder || mediaRecorder.state !== 'recording') return;
+      mediaRecorder.pause();
+      pauseStartedAt = Date.now();
+      if (controlsWidget) controlsWidget.updateTick(getElapsedMs(), true);
+    };
+
+    const resumeRecording = () => {
+      if (!mediaRecorder || mediaRecorder.state !== 'paused') return;
+      mediaRecorder.resume();
+      pausedAccum += Date.now() - pauseStartedAt;
+      pauseStartedAt = null;
+      if (controlsWidget) controlsWidget.updateTick(getElapsedMs(), false);
+    };
+
+    const togglePause = () => { if (pauseStartedAt) resumeRecording(); else pauseRecording(); };
+
     const startRecording = async () => {
       container.classList.add('crx-filling');
+      hidePopup();
       await runCountdown();
 
       try {
@@ -416,7 +723,9 @@
           downloadBlob(blob);
           stopAllTracks();
           stopTimer();
+          if (controlsWidget) { controlsWidget.destroy(); controlsWidget = null; }
           setRecordingUIState(false);
+          showPopup();
           status.className = 'crx-status crx-status-success';
           status.innerHTML = 'Recording saved';
           setTimeout(() => { status.innerHTML = ''; status.className = 'crx-status'; }, 3000);
@@ -429,7 +738,11 @@
         mediaRecorder.start(1000);
         setRecordingUIState(true);
         startTimer();
+        if (settings.controls) {
+          controlsWidget = createControlsWidget({ onTogglePause: togglePause, onStop: stopRecording });
+        }
       } catch (e) {
+        showPopup();
         console.error('[ScreenCraft]', e);
         status.className = 'crx-status crx-status-error';
         status.innerHTML = `${errorIcon}${e.message || 'Recording was cancelled.'}`;
