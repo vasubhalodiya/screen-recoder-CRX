@@ -4,7 +4,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 :host {
   all: initial;
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
@@ -20,8 +20,8 @@
   --color-blue: #3b82f6;
 
   --text-muted: #555555;
-  --text-normal: #7a7a7a;
-  --text-bright: #cccccc;
+  --text-normal: #9a9a9a;
+  --text-bright: #eaeaea;
   --text-grey: #888888;
   --border-item: #2a2a2a;
   --border-width: 2px;
@@ -41,7 +41,7 @@
 /* ── Card shell ──────────────────────────────────────────────────────────── */
 .autoscribe-floating {
   position: relative;
-  width: 320px;
+  width: 260px;
   max-height: 480px;
   background: var(--bg-primary);
   border-radius: 14px;
@@ -60,7 +60,7 @@
 }
 
 .autoscribe-floating.crx-settings-open {
-  width: 380px;
+  width: 300px;
 }
 
 /* ::before acts as the rotating gradient background when loading */
@@ -173,10 +173,9 @@
 
 .crx-row-label {
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-bright);
   white-space: nowrap;
-  letter-spacing: -0.01em;
   flex: 1;
   min-width: 0;
 }
@@ -192,8 +191,8 @@
   transition: color 0.15s ease;
 }
 .crx-status:empty { display: none; }
-.crx-status.crx-status-success { color: var(--color-success); font-weight: 600; }
-.crx-status.crx-status-error { color: var(--color-error); font-weight: 600; }
+.crx-status.crx-status-success { color: var(--color-success); font-weight: 500; }
+.crx-status.crx-status-error { color: var(--color-error); font-weight: 500; }
 .crx-status.crx-status-running { color: var(--color-running); }
 
 /* ── Spinner ─────────────────────────────────────────────────────────────── */
@@ -255,7 +254,7 @@
 }
 
 /* When settings are open, style the settings items corners */
-.crx-settings-open #crx-row-quality {
+.crx-settings-open #crx-row-countdown {
   border-top-left-radius: 10px !important;
   border-top-right-radius: 10px !important;
   border-top: none !important;
@@ -284,7 +283,6 @@
 .crx-back-icon { width: 18px; height: 18px; stroke-width: 2; }
 .crx-settings-icon { width: 16px; height: 16px; }
 .crx-close-icon { width: 16px; height: 16px; }
-.crx-minimize-icon { width: 18px; height: 18px; }
 
 .crx-drag-icon {
   width: 16px;
@@ -334,7 +332,7 @@
 .crx-start-item {
   background: linear-gradient(135deg, #ff5a2e, #ed1c57) !important;
 }
-.crx-start-item .crx-row-label { color: #ffffff; font-weight: 700; }
+.crx-start-item .crx-row-label { color: #ffffff; font-weight: 500; }
 .crx-start-item:hover { filter: brightness(1.06); }
 .crx-rec-icon { width: 12px; height: 12px; fill: #ffffff; margin-left: 8px; }
 .crx-start-item.crx-recording-state {
@@ -343,96 +341,8 @@
 .crx-start-item.crx-recording-state .crx-row-label { color: var(--color-error); }
 .crx-start-item.crx-recording-state .crx-rec-icon { fill: var(--color-error); }
 
-/* Settings select */
-.crx-select {
-  background: var(--bg-primary);
-  color: var(--text-bright);
-  border: 1px solid var(--border-item);
-  border-radius: 6px;
-  padding: 5px 8px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-/* ── Collapsed State ── */
-.autoscribe-floating.crx-collapsed {
-  width: 40px !important;
-  height: 40px !important;
-  max-height: 40px !important;
-  border-radius: 12px !important;
-  background: var(--bg-primary) !important;
-  cursor: pointer !important;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25) !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  padding: 0 !important;
-}
-.autoscribe-floating.crx-collapsed:active { cursor: pointer !important; }
-.autoscribe-floating.crx-collapsed .crx-header {
-  padding: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-}
-.autoscribe-floating.crx-collapsed .crx-hd-left {
-  width: 100% !important;
-  height: 100% !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 0 !important;
-}
-.autoscribe-floating.crx-collapsed #crx-logo-img { width: 26px !important; height: 26px !important; }
-
-/* Recording indicator dot on the collapsed icon */
-.autoscribe-floating.crx-collapsed.crx-is-recording::after {
-  content: '';
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: var(--color-error);
-  animation: crx-rec-pulse 1.2s ease-in-out infinite;
-  z-index: 5;
-}
-@keyframes crx-rec-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.35; }
-}
-
-/* Hide everything else in collapsed state */
-.autoscribe-floating.crx-collapsed #crx-drag-handle,
-.autoscribe-floating.crx-collapsed #crx-back-btn,
-.autoscribe-floating.crx-collapsed .crx-hd-right,
-.autoscribe-floating.crx-collapsed .crx-body,
-.autoscribe-floating.crx-collapsed .crx-status {
-  display: none !important;
-}
-
-.autoscribe-floating.crx-collapsed::before,
-.autoscribe-floating.crx-collapsed::after {
-  display: none !important;
-}
-.autoscribe-floating.crx-collapsed.crx-is-recording::after {
-  display: block !important;
-}
-
-/* Disable minimize button while recording is starting */
-.autoscribe-floating.crx-filling #crx-minimize-btn {
-  pointer-events: none !important;
-  opacity: 0.5 !important;
-  cursor: not-allowed !important;
-}
-.autoscribe-floating.crx-filling .crx-header-icons:not(#crx-minimize-btn) {
+/* While starting a recording, keep every header icon usable except drag. */
+.autoscribe-floating.crx-filling .crx-header-icons {
   pointer-events: auto !important;
   opacity: 1 !important;
   cursor: pointer !important;

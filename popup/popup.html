@@ -23,13 +23,6 @@
       <path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/>
       <circle cx="12" cy="12" r="3"/>
     </svg>
-    <!-- Minimize Icon -->
-    <svg id="crx-minimize-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="crx-header-icons crx-minimize-icon">
-      <polyline points="4 14 10 14 10 20"/>
-      <polyline points="20 10 14 10 14 4"/>
-      <line x1="14" x2="20" y1="10" y2="4"/>
-      <line x1="10" x2="4" y1="14" y2="20"/>
-    </svg>
     <!-- X close -->
     <svg id="crx-close-btn" viewBox="0 0 16 16" class="crx-header-icons crx-close-icon">
       <line x1="4" y1="4" x2="12" y2="12"/>
@@ -42,13 +35,16 @@
   <div class="crx-row-item crx-source-item crx-main-item crx-main-view-item" data-source="screen">
     <span class="crx-row-label">Full Screen</span>
     <svg class="crx-source-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+    <svg class="crx-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
   </div>
   <div class="crx-row-item crx-source-item crx-main-view-item" data-source="window">
     <span class="crx-row-label">Window</span>
     <svg class="crx-source-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="7" height="7" rx="1"/><rect x="14" y="4" width="7" height="7" rx="1"/><rect x="3" y="15" width="7" height="7" rx="1"/><rect x="14" y="15" width="7" height="7" rx="1"/></svg>
+    <svg class="crx-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
   </div>
   <div class="crx-row-item crx-source-item crx-source-active crx-main-view-item" data-source="tab" id="crx-row-tab">
     <span class="crx-row-label">Current tab</span>
+    <svg class="crx-source-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 9h18"/></svg>
     <svg class="crx-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
   </div>
 
@@ -58,15 +54,6 @@
   </div>
 
   <!-- Settings View -->
-  <div class="crx-row-item crx-settings-item" id="crx-row-quality" style="display: none;">
-    <span class="crx-row-label">Video quality</span>
-    <select id="crx-select-quality" class="crx-select">
-      <option value="auto">Auto</option>
-      <option value="480p">480p</option>
-      <option value="720p">720p</option>
-      <option value="1080p">1080p</option>
-    </select>
-  </div>
   <div class="crx-row-item crx-settings-item" id="crx-row-countdown" style="display: none;">
     <span class="crx-row-label">Recording countdown</span>
     <label class="crx-switch">

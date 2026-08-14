@@ -173,12 +173,10 @@
 
     shadow.getElementById('crx-logo-img').src = chrome.runtime.getURL('icons/icon128.png');
 
-    // ── State Variables & Snapping / Inactivity Logic ───────────────────────
+    // ── State Variables & Drag Logic (no auto-minimize / no collapse) ───────
     const handle = shadow.getElementById('crx-drag-handle');
     let isDragging = false;
-    let offsetX = 0, offsetY = 0, startX = 0, startY = 0;
-    let hasMoved = false;
-    let inactivityTimeout = null;
+    let offsetX = 0, offsetY = 0;
     let hasBeenDragged = false;
 
     const resizeObserver = new ResizeObserver(entries => {
@@ -202,36 +200,7 @@
     });
     resizeObserver.observe(container);
 
-    const getTargetWidth = () => {
-      if (container.classList.contains('crx-collapsed')) return 40;
-      if (container.classList.contains('crx-settings-open')) return 380;
-      return 320;
-    };
-    const getTargetHeight = () => container.classList.contains('crx-collapsed') ? 40 : 320;
-
-    const snapToNearestEdge = () => {
-      const rect = root.getBoundingClientRect();
-      const width = getTargetWidth(), height = getTargetHeight();
-      const x = rect.left, y = rect.top;
-      const distLeft = x, distRight = window.innerWidth - x - width;
-      const distTop = y, distBottom = window.innerHeight - y - height;
-      const minDist = Math.min(distLeft, distRight, distTop, distBottom);
-      const margin = 20;
-      let targetLeft = x, targetTop = y;
-      if (minDist === distLeft) targetLeft = margin;
-      else if (minDist === distRight) targetLeft = window.innerWidth - width - margin;
-      else if (minDist === distTop) targetTop = margin;
-      else targetTop = window.innerHeight - height - margin;
-      const maxLeft = window.innerWidth - width - margin;
-      const maxTop = window.innerHeight - height - margin;
-      targetLeft = Math.max(margin, Math.min(targetLeft, maxLeft));
-      targetTop = Math.max(margin, Math.min(targetTop, maxTop));
-      root.style.transition = 'left 0.5s cubic-bezier(0.16, 1, 0.3, 1), top 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
-      root.style.left = `${targetLeft}px`;
-      root.style.top = `${targetTop}px`;
-      root.style.right = 'auto';
-      setTimeout(() => { root.style.transition = ''; }, 500);
-    };
+    const getTargetWidth = () => container.classList.contains('crx-settings-open') ? 380 : 320;
 
     const snapToTopRight = () => {
       const width = getTargetWidth();
@@ -246,97 +215,33 @@
     root.snapToTopRight = snapToTopRight;
     root.resetDragState = () => { hasBeenDragged = false; root.removeAttribute('data-has-been-dragged'); };
 
-    const collapsePanel = (isAutomatic = false) => {
-      if (container.classList.contains('crx-collapsed')) return;
-      if (isAutomatic && isRecording) {
-        // Never block the recording — but keep the floating icon at a
-        // predictable, normal spot (top-right) instead of wherever it
-        // happened to be, so it doesn't feel like it "jumps" randomly.
-      }
-      container.classList.remove('crx-settings-open');
-      const btnBack = shadow.getElementById('crx-back-btn');
-      const btnSettings = shadow.getElementById('crx-settings-btn');
-      if (btnBack) btnBack.style.display = 'none';
-      if (btnSettings) btnSettings.style.display = 'block';
-      shadow.querySelectorAll('.crx-main-view-item').forEach(el => { el.style.display = 'flex'; });
-      shadow.querySelectorAll('.crx-settings-item').forEach(el => { el.style.display = 'none'; });
-
-      const status = shadow.getElementById('crx-status-text');
-      if (status && !isRecording) { status.innerHTML = ''; status.className = 'crx-status'; }
-
-      container.classList.add('crx-collapsed');
-
-      if (inactivityTimeout) { clearTimeout(inactivityTimeout); inactivityTimeout = null; }
-
-      if (hasBeenDragged) snapToNearestEdge();
-      else if (isAutomatic) snapToTopRight();
-      else snapToNearestEdge();
-    };
-
-    const startInactivityTimer = () => {
-      if (inactivityTimeout) clearTimeout(inactivityTimeout);
-      inactivityTimeout = setTimeout(() => {
-        if (document.getElementById('screencraft-panel-root')) collapsePanel(true);
-      }, 60000);
-    };
-
-    const resetInactivityTimer = () => {
-      if (!container.classList.contains('crx-collapsed')) startInactivityTimer();
-    };
-
-    const expandPanel = () => {
-      if (!container.classList.contains('crx-collapsed')) return;
-      container.classList.remove('crx-collapsed');
-      startInactivityTimer();
-      if (!hasBeenDragged) snapToNearestEdge();
-    };
-
     setTimeout(() => {
       container.classList.add('crx-visible');
-      startInactivityTimer();
       const initRect = root.getBoundingClientRect();
       root.style.left = `${initRect.left}px`;
       root.style.right = 'auto';
     }, 20);
 
-    container.addEventListener('click', () => { resetInactivityTimer(); });
-
-    shadow.getElementById('crx-logo-img').addEventListener('click', e => {
-      if (!container.classList.contains('crx-collapsed')) {
-        e.stopPropagation();
-        collapsePanel(false);
-      }
-    });
-
-    // ── Drag & Drop ──────────────────────────────────────────────────────────
+    // ── Drag & Drop (via drag handle only) ───────────────────────────────────
     container.addEventListener('pointerdown', e => {
-      const isCollapsed = container.classList.contains('crx-collapsed');
-      if (!isCollapsed && !e.target.closest('#crx-drag-handle')) return;
+      if (!e.target.closest('#crx-drag-handle')) return;
       root.style.transition = '';
       isDragging = true;
-      hasMoved = false;
-      startX = e.clientX; startY = e.clientY;
       offsetX = e.clientX - root.offsetLeft;
       offsetY = e.clientY - root.offsetTop;
-      const captureTarget = isCollapsed ? container : handle;
-      try { captureTarget.setPointerCapture(e.pointerId); } catch (_) {}
-      if (!isCollapsed) handle.style.cursor = 'grabbing';
+      try { handle.setPointerCapture(e.pointerId); } catch (_) {}
+      handle.style.cursor = 'grabbing';
       container.style.cursor = 'grabbing';
       e.stopPropagation();
       e.preventDefault();
-      resetInactivityTimer();
     });
 
     let dragRafId = null;
     container.addEventListener('pointermove', e => {
       if (!isDragging) return;
       e.stopPropagation();
-      const dx = e.clientX - startX, dy = e.clientY - startY;
-      if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
-        hasMoved = true;
-        hasBeenDragged = true;
-        root.setAttribute('data-has-been-dragged', 'true');
-      }
+      hasBeenDragged = true;
+      root.setAttribute('data-has-been-dragged', 'true');
       const cx = e.clientX, cy = e.clientY;
       if (dragRafId) return;
       dragRafId = requestAnimationFrame(() => {
@@ -356,47 +261,30 @@
     container.addEventListener('pointerup', e => {
       if (!isDragging) return;
       isDragging = false;
-      const isCollapsed = container.classList.contains('crx-collapsed');
-      const captureTarget = isCollapsed ? container : handle;
-      try { captureTarget.releasePointerCapture(e.pointerId); } catch (_) {}
-      if (!isCollapsed) handle.style.cursor = '';
+      try { handle.releasePointerCapture(e.pointerId); } catch (_) {}
+      handle.style.cursor = '';
       container.style.cursor = '';
       e.stopPropagation();
-      if (isCollapsed) {
-        if (!hasMoved) expandPanel();
-        else snapToNearestEdge();
-      }
     });
     container.addEventListener('pointercancel', () => { isDragging = false; });
 
     const handleResize = () => {
-      if (container.classList.contains('crx-collapsed')) {
-        snapToNearestEdge();
-      } else {
-        const rect = root.getBoundingClientRect();
-        const maxLeft = window.innerWidth - rect.width;
-        const maxTop = window.innerHeight - rect.height;
-        root.style.left = `${Math.max(0, Math.min(root.offsetLeft, maxLeft))}px`;
-        root.style.top = `${Math.max(0, Math.min(root.offsetTop, maxTop))}px`;
-      }
+      const rect = root.getBoundingClientRect();
+      const maxLeft = window.innerWidth - rect.width;
+      const maxTop = window.innerHeight - rect.height;
+      root.style.left = `${Math.max(0, Math.min(root.offsetLeft, maxLeft))}px`;
+      root.style.top = `${Math.max(0, Math.min(root.offsetTop, maxTop))}px`;
     };
     window.addEventListener('resize', handleResize);
 
     // ── Close button ─────────────────────────────────────────────────────────
     shadow.getElementById('crx-close-btn').addEventListener('click', e => {
       if (isRecording) return; // don't let the panel vanish mid-recording
-      if (inactivityTimeout) { clearTimeout(inactivityTimeout); inactivityTimeout = null; }
       try { resizeObserver.disconnect(); } catch (_) {}
       window.removeEventListener('resize', handleResize);
       container.classList.remove('crx-visible');
       setTimeout(() => { root.remove(); }, 400);
       e.stopPropagation();
-    });
-
-    // ── Minimize button ──────────────────────────────────────────────────────
-    shadow.getElementById('crx-minimize-btn').addEventListener('click', e => {
-      e.stopPropagation();
-      collapsePanel(true);
     });
 
     // ── Settings view toggling ───────────────────────────────────────────────
@@ -422,21 +310,18 @@
     });
 
     // ── Persistent settings ───────────────────────────────────────────────────
-    const qualitySelect = shadow.getElementById('crx-select-quality');
     const countdownToggle = shadow.getElementById('crx-toggle-countdown');
     const controlsToggle = shadow.getElementById('crx-toggle-controls');
 
     let settings = { quality: 'auto', countdown: true, controls: true };
     chrome.storage.local.get(['screencraft_settings'], res => {
-      settings = { ...settings, ...(res.screencraft_settings || {}) };
-      qualitySelect.value = settings.quality;
+      settings = { ...settings, ...(res.screencraft_settings || {}), quality: 'auto' };
       countdownToggle.checked = settings.countdown;
       controlsToggle.checked = settings.controls;
     });
 
     const saveSettings = () => chrome.storage.local.set({ screencraft_settings: settings });
 
-    qualitySelect.addEventListener('change', () => { settings.quality = qualitySelect.value; saveSettings(); });
     countdownToggle.addEventListener('change', () => { settings.countdown = countdownToggle.checked; saveSettings(); });
     controlsToggle.addEventListener('change', () => { settings.controls = controlsToggle.checked; saveSettings(); });
 
@@ -471,7 +356,6 @@
       isRecording = recording;
       btnStart.classList.toggle('crx-recording-state', recording);
       startLabel.textContent = recording ? 'Stop Recording' : 'Start Recording';
-      container.classList.toggle('crx-is-recording', recording);
       sourceRows.forEach(r => r.style.pointerEvents = recording ? 'none' : '');
       sourceRows.forEach(r => r.style.opacity = recording ? '0.5' : '');
     };
