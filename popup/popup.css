@@ -1,0 +1,444 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   ScreenCraft — same card language & mechanics as AutoScribe's popup.css,
+   just sized up a bit and reskinned for screen recording rows.
+   ═══════════════════════════════════════════════════════════════════════════ */
+:host {
+  all: initial;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* ── Design Tokens & Themes ────────────────────────────────────────────── */
+  --bg-primary: #181818;
+  --bg-secondary: #2c2c2e;
+  --bg-hover: #39393b;
+
+  --color-rec: #ff5a2e;
+  --color-success: #22c55e;
+  --color-error: #ef4444;
+  --color-running: #a1a1aa;
+  --color-blue: #3b82f6;
+
+  --text-muted: #555555;
+  --text-normal: #7a7a7a;
+  --text-bright: #cccccc;
+  --text-grey: #888888;
+  --border-item: #2a2a2a;
+  --border-width: 2px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ── Card shell ──────────────────────────────────────────────────────────── */
+.autoscribe-floating {
+  position: relative;
+  width: 320px;
+  max-height: 480px;
+  background: var(--bg-primary);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  user-select: none;
+  border: var(--border-width) solid transparent;
+  transform: translateY(-80px);
+  opacity: 0;
+  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1), max-height 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-radius 0.4s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.4s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.autoscribe-floating.crx-visible {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.autoscribe-floating.crx-settings-open {
+  width: 380px;
+}
+
+/* ::before acts as the rotating gradient background when loading */
+.autoscribe-floating::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: transparent;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.autoscribe-floating.crx-loading-rec::before {
+  background: conic-gradient(var(--color-rec), transparent 30%, var(--color-rec) 50%, transparent 80%, var(--color-rec));
+  animation: spin 2s linear infinite;
+  opacity: 1;
+}
+
+/* ::after covers the center of the card, leaving only the border visible */
+.autoscribe-floating::after {
+  content: '';
+  position: absolute;
+  top: var(--border-width);
+  left: var(--border-width);
+  right: var(--border-width);
+  bottom: var(--border-width);
+  background: var(--bg-primary);
+  border-radius: 12px;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Ensure all content layers are above the border pseudo-elements */
+.crx-header,
+.crx-body,
+.crx-status {
+  position: relative;
+  z-index: 2;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+.crx-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 14px 11px 14px;
+  background: transparent;
+}
+
+.crx-hd-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.crx-hd-right {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+/* Ensure SVG inner shapes don't intercept pointer events */
+.crx-header svg * {
+  pointer-events: none !important;
+}
+
+/* ── Body (inset rounded panel) ──────────────────────────────────────────── */
+.crx-body {
+  margin: 0 6px 6px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* ── Row items ─────────────────────────────────────────────────────────── */
+.crx-row-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 12px;
+  background: var(--bg-secondary);
+  cursor: pointer;
+  transition: background 0.15s;
+  border-radius: 4px;
+}
+
+.crx-row-item:first-child {
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+}
+
+.crx-row-item:last-child {
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+}
+
+.crx-row-item:hover {
+  background: var(--bg-hover);
+}
+
+.crx-row-item + .crx-row-item {
+  border-top: 1px solid var(--border-item);
+}
+
+.crx-row-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-bright);
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Status text ─────────────────────────────────────────────────────────── */
+.crx-status {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 6px 14px 10px;
+  min-height: 30px;
+  line-height: 1.3;
+  transition: color 0.15s ease;
+}
+.crx-status:empty { display: none; }
+.crx-status.crx-status-success { color: var(--color-success); font-weight: 600; }
+.crx-status.crx-status-error { color: var(--color-error); font-weight: 600; }
+.crx-status.crx-status-running { color: var(--color-running); }
+
+/* ── Spinner ─────────────────────────────────────────────────────────────── */
+.crx-spinner {
+  width: 13px;
+  height: 13px;
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  border-top-color: var(--text-bright);
+  border-radius: 50%;
+  animation: crx-spin 0.7s linear infinite;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 2px;
+}
+@keyframes crx-spin { to { transform: rotate(360deg); } }
+
+/* Switch Toggle */
+.crx-switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+  margin-left: 8px;
+}
+.crx-switch input { opacity: 0; width: 0; height: 0; }
+.crx-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: var(--bg-hover);
+  transition: 0.2s;
+  border-radius: 20px;
+}
+.crx-slider:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
+  background-color: var(--text-bright);
+  transition: 0.2s;
+  border-radius: 50%;
+}
+.crx-switch input:checked + .crx-slider { background-color: var(--color-success); }
+.crx-switch input:checked + .crx-slider:before {
+  transform: translateX(16px);
+  background-color: #ffffff;
+}
+
+/* Explicit rounded corners for main items to prevent DOM-sibling displacement bugs */
+[data-source="screen"] {
+  border-top-left-radius: 10px !important;
+  border-top-right-radius: 10px !important;
+}
+#crx-btn-start {
+  border-bottom-left-radius: 10px !important;
+  border-bottom-right-radius: 10px !important;
+}
+
+/* When settings are open, style the settings items corners */
+.crx-settings-open #crx-row-quality {
+  border-top-left-radius: 10px !important;
+  border-top-right-radius: 10px !important;
+  border-top: none !important;
+}
+.crx-settings-open #crx-row-controls {
+  border-bottom-left-radius: 10px !important;
+  border-bottom-right-radius: 10px !important;
+}
+
+/* ── Icons ── */
+.crx-header-icons {
+  stroke: var(--text-normal);
+  fill: none;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  display: block;
+  cursor: pointer;
+  transition: stroke 0.15s;
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 10;
+}
+.crx-header-icons:hover { stroke: var(--text-bright); }
+
+.crx-back-icon { width: 18px; height: 18px; stroke-width: 2; }
+.crx-settings-icon { width: 16px; height: 16px; }
+.crx-close-icon { width: 16px; height: 16px; }
+.crx-minimize-icon { width: 18px; height: 18px; }
+
+.crx-drag-icon {
+  width: 16px;
+  height: 16px;
+  fill: var(--text-muted);
+  cursor: grab;
+  display: block;
+  transition: fill 0.15s;
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 10;
+}
+.crx-drag-icon:hover { fill: var(--text-grey); }
+.crx-drag-icon:active { cursor: grabbing; }
+
+.crx-bolt-icon {
+  width: 16px;
+  height: 16px;
+  fill: var(--text-bright);
+  display: block;
+}
+
+/* Screen-source rows */
+.crx-source-icon {
+  width: 15px;
+  height: 15px;
+  stroke: var(--text-normal);
+  fill: none;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+.crx-check-icon {
+  width: 15px;
+  height: 15px;
+  stroke: var(--color-blue);
+  fill: none;
+  flex-shrink: 0;
+  margin-left: 8px;
+  display: none;
+}
+.crx-source-active { background: var(--bg-hover); }
+.crx-source-active .crx-check-icon { display: block; }
+.crx-source-active .crx-source-icon { display: none; }
+.crx-source-active .crx-row-label { color: #ffffff; }
+
+/* Start recording row */
+.crx-start-item {
+  background: linear-gradient(135deg, #ff5a2e, #ed1c57) !important;
+}
+.crx-start-item .crx-row-label { color: #ffffff; font-weight: 700; }
+.crx-start-item:hover { filter: brightness(1.06); }
+.crx-rec-icon { width: 12px; height: 12px; fill: #ffffff; margin-left: 8px; }
+.crx-start-item.crx-recording-state {
+  background: var(--bg-secondary) !important;
+}
+.crx-start-item.crx-recording-state .crx-row-label { color: var(--color-error); }
+.crx-start-item.crx-recording-state .crx-rec-icon { fill: var(--color-error); }
+
+/* Settings select */
+.crx-select {
+  background: var(--bg-primary);
+  color: var(--text-bright);
+  border: 1px solid var(--border-item);
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ── Collapsed State ── */
+.autoscribe-floating.crx-collapsed {
+  width: 40px !important;
+  height: 40px !important;
+  max-height: 40px !important;
+  border-radius: 12px !important;
+  background: var(--bg-primary) !important;
+  cursor: pointer !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+}
+.autoscribe-floating.crx-collapsed:active { cursor: pointer !important; }
+.autoscribe-floating.crx-collapsed .crx-header {
+  padding: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+}
+.autoscribe-floating.crx-collapsed .crx-hd-left {
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0 !important;
+}
+.autoscribe-floating.crx-collapsed #crx-logo-img { width: 26px !important; height: 26px !important; }
+
+/* Recording indicator dot on the collapsed icon */
+.autoscribe-floating.crx-collapsed.crx-is-recording::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--color-error);
+  animation: crx-rec-pulse 1.2s ease-in-out infinite;
+  z-index: 5;
+}
+@keyframes crx-rec-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+/* Hide everything else in collapsed state */
+.autoscribe-floating.crx-collapsed #crx-drag-handle,
+.autoscribe-floating.crx-collapsed #crx-back-btn,
+.autoscribe-floating.crx-collapsed .crx-hd-right,
+.autoscribe-floating.crx-collapsed .crx-body,
+.autoscribe-floating.crx-collapsed .crx-status {
+  display: none !important;
+}
+
+.autoscribe-floating.crx-collapsed::before,
+.autoscribe-floating.crx-collapsed::after {
+  display: none !important;
+}
+.autoscribe-floating.crx-collapsed.crx-is-recording::after {
+  display: block !important;
+}
+
+/* Disable minimize button while recording is starting */
+.autoscribe-floating.crx-filling #crx-minimize-btn {
+  pointer-events: none !important;
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+}
+.autoscribe-floating.crx-filling .crx-header-icons:not(#crx-minimize-btn) {
+  pointer-events: auto !important;
+  opacity: 1 !important;
+  cursor: pointer !important;
+}
+.autoscribe-floating.crx-filling .crx-drag-icon {
+  pointer-events: auto !important;
+  opacity: 1 !important;
+  cursor: grab !important;
+}
