@@ -449,7 +449,7 @@
 
     shadow.appendChild(container);
 
-    shadow.getElementById('crx-logo-img').src = chrome.runtime.getURL('icons/icon128.png');
+    shadow.getElementById('crx-logo-img').src = chrome.runtime.getURL('icons/icon.png');
 
     // ── State Variables & Drag Logic (no auto-minimize / no collapse) ───────
     const handle = shadow.getElementById('crx-drag-handle');
@@ -700,21 +700,30 @@
     const togglePause = () => { if (pauseStartedAt) resumeRecording(); else pauseRecording(); };
 
     const startRecording = async () => {
+      const displayOptions = { video: true, audio: true };
+      if (selectedSource === 'window') displayOptions.video = { displaySurface: 'window' };
+      else if (selectedSource === 'screen') displayOptions.video = { displaySurface: 'monitor' };
+      else if (selectedSource === 'tab') {
+        try { displayOptions.preferCurrentTab = true; } catch (_) { }
+      }
+
+      let screenStream;
+      try {
+        screenStream = await navigator.mediaDevices.getDisplayMedia(displayOptions);
+      } catch (e) {
+        console.error('[ScreenCraft]', e);
+        status.className = 'crx-status crx-status-error';
+        status.innerHTML = `${errorIcon}${e.message || 'Recording was cancelled.'}`;
+        setTimeout(() => { status.innerHTML = ''; status.className = 'crx-status'; }, 3500);
+        return;
+      }
+
       container.classList.add('crx-filling');
       hidePopup();
+      allTracks.push(...screenStream.getTracks());
       await runCountdown();
 
       try {
-        const displayOptions = { video: true, audio: true };
-        if (selectedSource === 'window') displayOptions.video = { displaySurface: 'window' };
-        else if (selectedSource === 'screen') displayOptions.video = { displaySurface: 'monitor' };
-        else if (selectedSource === 'tab') {
-          try { displayOptions.preferCurrentTab = true; } catch (_) { }
-        }
-
-        const screenStream = await navigator.mediaDevices.getDisplayMedia(displayOptions);
-        allTracks.push(...screenStream.getTracks());
-
         const compositeVideoStream = await buildComposite(screenStream, null, settings.quality);
         const mixedAudioTrack = mixAudio([screenStream]);
 
