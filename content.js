@@ -500,15 +500,17 @@
       root.style.right = 'auto';
     }, 20);
 
-    // ── Drag & Drop (via drag handle only) ───────────────────────────────────
+    // ── Drag & Drop (anywhere in the header, except its icon buttons) ───────
+    const header = shadow.querySelector('.crx-header');
     container.addEventListener('pointerdown', e => {
-      if (!e.target.closest('#crx-drag-handle')) return;
+      if (!e.target.closest('.crx-header')) return;
+      if (e.target.closest('#crx-settings-btn') || e.target.closest('#crx-close-btn') || e.target.closest('#crx-back-btn')) return;
       root.style.transition = '';
       isDragging = true;
       offsetX = e.clientX - root.offsetLeft;
       offsetY = e.clientY - root.offsetTop;
-      try { handle.setPointerCapture(e.pointerId); } catch (_) { }
-      handle.style.cursor = 'grabbing';
+      try { header.setPointerCapture(e.pointerId); } catch (_) { }
+      header.style.cursor = 'grabbing';
       container.style.cursor = 'grabbing';
       e.stopPropagation();
       e.preventDefault();
@@ -539,8 +541,8 @@
     container.addEventListener('pointerup', e => {
       if (!isDragging) return;
       isDragging = false;
-      try { handle.releasePointerCapture(e.pointerId); } catch (_) { }
-      handle.style.cursor = '';
+      try { header.releasePointerCapture(e.pointerId); } catch (_) { }
+      header.style.cursor = '';
       container.style.cursor = '';
       e.stopPropagation();
     });

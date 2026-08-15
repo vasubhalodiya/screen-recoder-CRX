@@ -112,6 +112,7 @@
   justify-content: space-between;
   padding: 11px 14px 11px 14px;
   background: transparent;
+  cursor: grab;
 }
 
 .crx-hd-left {
@@ -265,9 +266,11 @@
 
 /* ── Icons ── */
 .crx-header-icons {
+  width: 17px;
+  height: 17px;
   stroke: var(--text-normal);
   fill: none;
-  stroke-width: 1.7;
+  stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
   display: block;
@@ -279,9 +282,7 @@
 }
 .crx-header-icons:hover { stroke: var(--text-bright); }
 
-.crx-back-icon { width: 18px; height: 18px; stroke-width: 2; }
-.crx-settings-icon { width: 16px; height: 16px; }
-.crx-close-icon { width: 16px; height: 16px; }
+.crx-settings-icon { width: 15px; height: 15px; }
 
 .crx-drag-icon {
   width: 16px;
@@ -307,17 +308,20 @@
 
 /* Screen-source rows */
 .crx-source-icon {
-  width: 15px;
-  height: 15px;
+  width: 17px;
+  height: 17px;
   stroke: var(--text-normal);
+  stroke-width: 2;
   fill: none;
   flex-shrink: 0;
   margin-left: 8px;
 }
+.crx-window-icon { width: 18px; height: 18px; }
 .crx-check-icon {
-  width: 15px;
-  height: 15px;
+  width: 17px;
+  height: 17px;
   stroke: var(--color-blue);
+  stroke-width: 2;
   fill: none;
   flex-shrink: 0;
   margin-left: 8px;
